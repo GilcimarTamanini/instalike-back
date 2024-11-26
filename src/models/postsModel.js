@@ -8,3 +8,10 @@ export async function getTodosPosts() {
 
     return await colecao.find().toArray();
 }
+
+export async function criarPost(novoPost) {
+    const db = conexao.db("imersao-instabytes");
+    const colecao = db.collection("posts");
+
+    await colecao.insertOne(novoPost);    
+}
