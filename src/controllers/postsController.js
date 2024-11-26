@@ -1,6 +1,6 @@
 import fs from "fs";
 import { getTodosPosts, criarPost, atualizarPost } from "../models/postsModel.js";
-import { title } from "process";
+import gerarDescricaoComGemini from "../services/geminiService.js";
 
 export async function  listarPosts(req, res) {
     const posts = await getTodosPosts();
@@ -20,7 +20,7 @@ export async function novoPost(req, res) {
 
 export async function uploadImagem(req, res) {
     const novoPost = req.body;
-    novoPost.imagem = req.file.originalname;
+    novoPost.imgUrl = req.file.originalname;
 
     try {
         const postCriado = await criarPost(novoPost);
@@ -49,5 +49,26 @@ export async function editarPost(req, res) {
     } catch (erro) {
         console.error(erro.mesage);
         res.status(500).json({ "Erro": "Falha ao atualizar o post!" });
+    }    
+}
+
+export async function editarGeminiPost(req, res) {
+    const idPost = req.params.id;
+    const urlImagem = `http://localhost:3000/${idPost}.png`;
+    
+    try {
+        const imgBuffer = fs.readFileSync(`uploads/${idPost}.png`);
+        const descricao = await gerarDescricaoComGemini(imgBuffer);
+
+        const post = {
+            imgUrl: urlImagem,
+            title: req.body.title,
+            descricao: descricao    
+        }
+        const posAtualizado = await atualizarPost(idPost, post);
+        res.status(200).json(posAtualizado);
+    } catch (erro) {
+        console.error(erro.mesage);
+        res.status(500).json({ "Erro": "Falha ao atualizar o post usando o gemini!" });
     }    
 }
